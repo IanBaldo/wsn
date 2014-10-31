@@ -1,0 +1,45 @@
+#include "/home/terra/TerraNet_v0.1/terra/TerraNet.defs"
+
+var ushort nodeid = getNodeId();
+
+pktype usrMsg from radioMsg with
+	var ubyte[4] d8;
+	var ushort[4] d16;
+	var ulong[2] d32;
+end
+
+var usrMsg msgRadio;
+var ubyte stat;
+var ushort father = 0;
+
+var ushort[10] childID;
+var ubyte[10] seq;
+
+
+if nodeid == 11 then
+	// Start topology
+	loop do
+		await 2s;
+		father = 1;
+		emit LED0(ON);
+		var usrMsg topoMsg;
+		topoMsg.source = nodeid;
+		topoMsg.target = BROADCAST;
+		topoMsg.type = 2;
+		emit SEND(topoMsg);
+		await SEND_DONE;
+	end
+else
+	loop do
+		var usrMsg topMsg = await RECEIVE(2);
+			
+		father = topMsg.source;
+		topMsg.source = nodeid;
+		topMsg.target = BROADCAST;
+
+		emit LED1(ON);
+
+		emit SEND(topMsg);
+		await SEND_DONE(2);
+	end
+end

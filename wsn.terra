@@ -1,0 +1,116 @@
+#include "/home/terra/TerraNet_v0.1/terra/TerraNet.defs"
+
+var ushort nodeid = getNodeId();
+
+pktype usrMsg from radioMsg with
+	var ubyte[4] d8;
+	var ushort[4] d16;
+	var ulong[2] d32;
+end
+
+var usrMsg msgRadio;
+var ubyte stat;
+var ushort father = 0;
+
+var ushort[10] childID;
+var ubyte[10] seq;
+
+loop i,10 do
+	childID[i] = 0;
+	seq[i] = 0;
+end
+
+if nodeid == 11 then
+	// Start topology
+	await 2s;
+	father = 1;
+	emit LED0(ON);
+	var usrMsg topoMsg;
+	topoMsg.source = nodeid;
+	topoMsg.target = BROADCAST;
+	topoMsg.type = 2;
+	emit SEND(topoMsg);
+	await SEND_DONE;
+else	
+	var usrMsg topMsg = await RECEIVE(2);	
+			
+	father = topMsg.source;
+	topMsg.source = nodeid;
+	topMsg.target = BROADCAST;
+
+	emit LED1(ON);
+
+	emit SEND(topMsg);
+	await SEND_DONE(2);
+end
+
+var ushort temp = 0;
+msgRadio.d8[0] = 0;
+msgRadio.d32[0] = 0;
+
+par do
+	// Read Temp sensor
+	loop do
+		par/and do
+			emit REQ_TEMP();
+			temp = await TEMP;
+			msgRadio.d16[0] = temp;
+			msgRadio.source = nodeid;
+			msgRadio.d16[1] = nodeid;
+			msgRadio.type = 1;
+			inc msgRadio.d8[0];
+			await (nodeid % 10)s;
+			stat=qPut(msgRadio);
+		with
+			await 40s;
+		end		
+	end
+with
+	// Send Message
+	loop do
+		await Q_READY;
+		loop do
+			stat = qGet(msgRadio);
+
+			msgRadio.target = father;
+		
+			emit SEND_ACK(msgRadio);
+
+			emit LED2(TOGGLE);
+
+			loop do	
+				var ubyte ack = await SEND_DONE_ACK(1);
+				if ack != 0 then
+					break;
+				end
+				emit SEND_ACK(msgRadio);
+			end
+			if qSize() == 0 then
+				break;
+			end
+		end
+	end
+with
+	//routing
+	loop do
+		var usrMsg rMsg = await RECEIVE(1);
+		rMsg.source = nodeid;
+
+		loop i,10 do
+			
+			if childID[i] == rMsg.d16[1] then
+				if seq[i] < rMsg.d8[0]	then
+					seq[i] = rMsg.d8[0];
+					stat=qPut(rMsg);
+					break;
+				end
+			end
+			if childID[i] == 0 then
+						childID[i] = rMsg.d16[1];
+						seq[i] = rMsg.d8[0];
+						stat=qPut(rMsg);
+						break;
+			end
+		end
+	end
+end
