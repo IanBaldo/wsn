@@ -1,3 +1,12 @@
+/******************************
+*  			LEDs			  *
+While: ON
+
+RED(0) 		- Sensoring state
+GREEN(1) 	- Requesting Father
+YELLOW(2)	- Radio Silent
+*******************************/
+
 #include "/home/terra/TerraNet_v0.1/terra/TerraNet.defs"
 
 var ushort nodeid = getNodeId();
@@ -34,6 +43,7 @@ if nodeid == 11 then
 		emit LED2(TOGGLE);
 	end
 else
+	emit LED1(ON);
 	loop do
 
 		/******************************
@@ -41,7 +51,7 @@ else
 		*******************************/
 
 		loop do
-			par/or	do
+			par/or	do				
 				father = 0;
 				var usrMsg rqMsg;
 				rqMsg.source = nodeid;
@@ -55,9 +65,7 @@ else
 	
 				father = topMsg.source;
 				topMsg.source = nodeid;
-				topMsg.target = BROADCAST;
-
-				emit LED1(ON);
+				topMsg.target = BROADCAST;	
 
 				emit SEND(topMsg);
 				await SEND_DONE(2);
@@ -77,11 +85,16 @@ else
 		* SENSING
 		*******************************/
 		emit LED0(ON);
+		emit LED1(OFF);
 
-		par/or do
-			await CUSTOM_A;
+		par/or do	
+			par/or do
+				await CUSTOM_A;
+			with
+				var usrMsg reqMsg = await RECEIVE(3);
+			end
 			emit LED0(OFF);
-			emit LED1(OFF);
+			emit LED1(ON);
 		with
 			loop do
 				emit REQ_TEMP();
@@ -90,6 +103,21 @@ else
 					emit REQ_CUSTOM_A(1);
 				end
 				await 5s;
+			end
+		with
+			loop do
+				var usrMsg topMsg = await RECEIVE(2);
+	
+				father = topMsg.source;
+				topMsg.source = nodeid;
+				topMsg.target = BROADCAST;
+
+				emit SEND(topMsg);
+				await SEND_DONE(2);
+			
+				emit LED2(TOGGLE);
+				await 5s;
+				emit LED2(TOGGLE);
 			end
 		end
 	end
