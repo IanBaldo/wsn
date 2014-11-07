@@ -43,23 +43,94 @@ if nodeid == 11 then
 /******************************
 * BASE STATION
 *******************************/
-
 	father = 1;
-	par do
-		loop do
-			var usrMsg rqMsg = await RECEIVE(3);
-			emit LED0(TOGGLE);
+end
 
-			// Start topology
-			var usrMsg topoMsg;
-			topoMsg.source = nodeid;
-			topoMsg.target = BROADCAST;
-			topoMsg.type = 2;
-			emit SEND(topoMsg);
-			await SEND_DONE;
-		
+
+/******************************
+* SENSING MOTE
+*******************************/
+
+emit LED1(ON);
+loop do
+
+	/******************************
+	* REQUEST FATHER
+	*******************************/
+
+	loop do
+		par/or	do				
+			father = 0;
+			var usrMsg rqMsg;
+			rqMsg.source = nodeid;
+			rqMsg.target = BROADCAST;
+			rqMsg.type = 3;
+			rqMsg.d16[0] = nodeid;
+			emit SEND(rqMsg);
+			await SEND_DONE(3);
+
+			var usrMsg topMsg = await RECEIVE(2);
+
+			father = topMsg.source;
+			topMsg.source = nodeid;
+			topMsg.target = BROADCAST;	
+
+			emit SEND(topMsg);
+			await SEND_DONE(2);
+
 			emit LED2(TOGGLE);
-			await 5s; // Radio Silent
+			await 5s;
+			emit LED2(TOGGLE);
+			break;
+		with
+			//timeout
+			await 10s;
+		end
+	end
+
+
+	/******************************
+	* SENSING
+	*******************************/
+	emit LED0(ON);
+	emit LED1(OFF);
+
+	par/or do	
+		par/or do
+			await CUSTOM_A;
+		with
+			var usrMsg reqMsg = await RECEIVE(3);
+			if nodeid == 11 then
+				emit LED0(TOGGLE);
+
+				// Start topology
+				var usrMsg topoMsg;
+				topoMsg.source = nodeid;
+				topoMsg.target = BROADCAST;
+				topoMsg.type = 2;
+				emit SEND(topoMsg);
+				await SEND_DONE;
+
+				emit LED2(TOGGLE);
+				await 5s; // Radio Silent
+				emit LED2(TOGGLE);
+			end
+		end
+		emit LED0(OFF);
+		emit LED1(ON);
+	with
+		loop do
+			var usrMsg topMsg = await RECEIVE(2);
+
+			father = topMsg.source;
+			topMsg.source = nodeid;
+			topMsg.target = BROADCAST;
+
+			emit SEND(topMsg);
+			await SEND_DONE(2);
+	
+			emit LED2(TOGGLE);
+			await 5s;
 			emit LED2(TOGGLE);
 		end
 	with
@@ -70,7 +141,7 @@ if nodeid == 11 then
 				msgRadio.target = father;
 
 				emit SEND_ACK(msgRadio);
-				emit LED1(TOGGLE);
+				emit LED2(TOGGLE);
 
 				loop do	
 					var ubyte ack = await SEND_DONE_ACK(1);
@@ -83,6 +154,19 @@ if nodeid == 11 then
 					break;
 				end
 			end
+		end
+	with
+		loop do
+			par/and do
+				emit REQ_PHOTO();
+				var ushort photo = await PHOTO;
+				if photo > 10000 then
+					emit REQ_CUSTOM_A(1);
+
+				end
+			with
+				await 10s;
+			end		
 		end
 	with
 		loop do
@@ -122,145 +206,6 @@ if nodeid == 11 then
 					seq[i] = rMsg.d8[0];
 					stat=qPut(rMsg);
 					break;
-				end
-			end
-		end
-	end
-
-else
-
-/******************************
-* SENSING MOTE
-*******************************/
-
-	emit LED1(ON);
-	loop do
-
-		/******************************
-		* REQUEST FATHER
-		*******************************/
-
-		loop do
-			par/or	do				
-				father = 0;
-				var usrMsg rqMsg;
-				rqMsg.source = nodeid;
-				rqMsg.target = BROADCAST;
-				rqMsg.type = 3;
-				rqMsg.d16[0] = nodeid;
-				emit SEND(rqMsg);
-				await SEND_DONE(3);
-
-				var usrMsg topMsg = await RECEIVE(2);
-	
-				father = topMsg.source;
-				topMsg.source = nodeid;
-				topMsg.target = BROADCAST;	
-
-				emit SEND(topMsg);
-				await SEND_DONE(2);
-	
-				emit LED2(TOGGLE);
-				await 5s;
-				emit LED2(TOGGLE);
-				break;
-			with
-				//timeout
-				await 10s;
-			end
-		end
-	
-
-		/******************************
-		* SENSING
-		*******************************/
-		emit LED0(ON);
-		emit LED1(OFF);
-
-		par/or do	
-			par/or do
-				await CUSTOM_A;
-			with
-				var usrMsg reqMsg = await RECEIVE(3);
-			end
-			emit LED0(OFF);
-			emit LED1(ON);
-		with
-			loop do
-				var usrMsg topMsg = await RECEIVE(2);
-	
-				father = topMsg.source;
-				topMsg.source = nodeid;
-				topMsg.target = BROADCAST;
-
-				emit SEND(topMsg);
-				await SEND_DONE(2);
-			
-				emit LED2(TOGGLE);
-				await 5s;
-				emit LED2(TOGGLE);
-			end
-		with
-			loop do
-				await Q_READY;
-				loop do
-					stat = qGet(msgRadio);
-					msgRadio.target = father;
-
-					emit SEND_ACK(msgRadio);
-					emit LED2(TOGGLE);
-
-					loop do	
-						var ubyte ack = await SEND_DONE_ACK(1);
-						if ack != 0 then
-							break;
-						end
-						emit SEND_ACK(msgRadio);
-					end
-					if qSize() == 0 then
-						break;
-					end
-				end
-			end
-		with
-			loop do
-				par/and do
-					emit REQ_TEMP();
-					var ushort temp = await TEMP;
-					if temp > 530 then
-						emit REQ_CUSTOM_A(1);
-					else
-						msgRadio.d16[0] = temp;
-						msgRadio.source = nodeid;
-						msgRadio.d16[1] = nodeid;
-						msgRadio.type = 1;
-						inc msgRadio.d8[0];
-						await (nodeid % 10)s;
-						stat=qPut(msgRadio);
-					end
-				with
-					await 10s;
-				end		
-			end
-		with
-			loop do
-				var usrMsg rMsg = await RECEIVE(1);
-				rMsg.source = nodeid;
-
-				loop i,10 do		
-					if childID[i] == rMsg.d16[1] then
-						if seq[i] < rMsg.d8[0]	then
-							seq[i] = rMsg.d8[0];
-							stat=qPut(rMsg);
-							break;
-						end
-					end
-					if childID[i] == 0 then
-						childID[i] = rMsg.d16[1];
-						seq[i] = rMsg.d8[0];
-						stat=qPut(rMsg);
-						break;
-					end
 				end
 			end
 		end
