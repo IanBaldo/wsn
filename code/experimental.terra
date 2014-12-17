@@ -1,5 +1,3 @@
-
-
 /****************************************
 *  			LEDs			  			
 ******	BASETATION	******				
@@ -24,6 +22,10 @@ YELLOW(2)+RED(0)	- Message Sent
 *****************************************/
 
 #include "/home/terra/TerraNet_v0.1/terra/TerraNet.defs"
+#define REQ_FATHER 3
+#define TOPO_DESIGN 2
+#define DATA_MSG	1
+
 
 var ushort nodeid = getNodeId();
 
@@ -33,21 +35,23 @@ pktype usrMsg from radioMsg with
 	var ulong[2] d32;
 end
 
-var usrMsg msgRadio;
+var usrMsg tempMsg;
+
 var ubyte stat;
 var ushort father;
+var ubyte jump;
+var ushort send_seq = 0;
 
 var ushort[10] childID;
-var ubyte[10] seq;
+var ushort[10] seq;
 
 if nodeid == 11 then
-
 /******************************
 * BASE STATION
 *******************************/
 	father = 1;
+	jump = 1;
 end
-
 
 /******************************
 * SENSING MOTE
@@ -60,36 +64,41 @@ loop do
 	* REQUEST FATHER
 	*******************************/
 
-	loop do
-		par/or	do				
-			father = 0;
-			var usrMsg rqMsg;
-			rqMsg.source = nodeid;
-			rqMsg.target = BROADCAST;
-			rqMsg.type = 3;
-			rqMsg.d16[0] = nodeid;
-			emit SEND(rqMsg);
-			await SEND_DONE(3);
+	if nodeid != 11 then
 
-			var usrMsg topMsg = await RECEIVE(2);
+		loop do
+			par/or	do				
+				father = 0;
+				var usrMsg rqMsg;
+				rqMsg.source = nodeid;
+				rqMsg.target = BROADCAST;
+				rqMsg.type = 3;
+				rqMsg.d16[0] = nodeid;
+				emit SEND(rqMsg);
+				await SEND_DONE(REQ_FATHER);
 
-			father = topMsg.source;
-			topMsg.source = nodeid;
-			topMsg.target = BROADCAST;	
+				var usrMsg topMsg = await RECEIVE(TOPO_DESIGN);
 
-			emit SEND(topMsg);
-			await SEND_DONE(2);
+				father = topMsg.source;
+				jump = topMsg.d8[0];
+				topMsg.source = nodeid;
+				topMsg.target = BROADCAST;	
+				topMsg.d8[0] = jump + 1;				
 
-			emit LED2(TOGGLE);
-			await 5s;
-			emit LED2(TOGGLE);
-			break;
-		with
-			//timeout
-			await 10s;
+				emit SEND(topMsg);
+				await SEND_DONE(TOPO_DESIGN);
+
+				emit LED2(TOGGLE);
+				await 5s;
+				emit LED2(TOGGLE);
+				break;
+			with
+				//timeout
+				await 10s;
+			end
 		end
-	end
 
+	end
 
 	/******************************
 	* SENSING
@@ -101,7 +110,7 @@ loop do
 		par/or do
 			await CUSTOM_A;
 		with
-			var usrMsg reqMsg = await RECEIVE(3);
+			var usrMsg reqMsg = await RECEIVE(REQ_FATHER);
 			if nodeid == 11 then
 				emit LED0(TOGGLE);
 
@@ -110,6 +119,7 @@ loop do
 				topoMsg.source = nodeid;
 				topoMsg.target = BROADCAST;
 				topoMsg.type = 2;
+				topoMsg.d8[0] = 1; //Jump
 				emit SEND(topoMsg);
 				await SEND_DONE;
 
@@ -121,32 +131,44 @@ loop do
 		emit LED0(OFF);
 		emit LED1(ON);
 	with
-		loop do
-			var usrMsg topMsg = await RECEIVE(2);
+		if nodeid == 11 then
+			await FOREVER;
+		else
 
-			father = topMsg.source;
-			topMsg.source = nodeid;
-			topMsg.target = BROADCAST;
+			loop do
+				var usrMsg topMsg = await RECEIVE(TOPO_DESIGN);
 
-			emit SEND(topMsg);
-			await SEND_DONE(2);
+				father = topMsg.source;
+				topMsg.source = nodeid;
+				topMsg.target = BROADCAST;
+
+				emit SEND(topMsg);
+				await SEND_DONE(TOPO_DESIGN);
 	
-			emit LED2(TOGGLE);
-			await 5s;
-			emit LED2(TOGGLE);
+				emit LED2(TOGGLE);
+				await 5s;
+				emit LED2(TOGGLE);
+			end
 		end
 	with
 		loop do
 			await Q_READY;
+			var usrMsg msgRadio;
 			loop do
 				stat = qGet(msgRadio);
-				msgRadio.target = father;
 
+				msgRadio.target = father;
+				msgRadio.source = nodeid;
+				msgRadio.d8[2] = qSize();
+				inc send_seq;
+				msgRadio.d16[2] = send_seq;
+			
 				emit SEND_ACK(msgRadio);
+
 				emit LED2(TOGGLE);
 
 				loop do	
-					var ubyte ack = await SEND_DONE_ACK(1);
+					var ubyte ack = await SEND_DONE_ACK(DATA_MSG);
 					if ack != 0 then
 						break;
 					end
@@ -160,52 +182,38 @@ loop do
 	with
 		loop do
 			par/and do
-				emit REQ_PHOTO();
-				var ushort photo = await PHOTO;
-				if photo > 10000 then
-					emit REQ_CUSTOM_A(1);
-
-				end
-			with
-				await 10s;
-			end		
-		end
-	with
-		loop do
-			par/and do
 				emit REQ_TEMP();
 				var ushort temp = await TEMP;
-				if temp > 530 then
-					emit REQ_CUSTOM_A(1);
+				if temp > 530 then					// REMOVE FOR FINAL VERSION
+					emit REQ_CUSTOM_A(DATA_MSG);
 				else
-					msgRadio.d16[0] = temp;
-					msgRadio.source = nodeid;
-					msgRadio.d16[1] = nodeid;
-					msgRadio.type = 1;
-					inc msgRadio.d8[0];
-					await (nodeid % 10)s;
-					stat=qPut(msgRadio);
+					tempMsg.d16[0] = temp;
+					tempMsg.source = nodeid;
+					tempMsg.d16[1] = nodeid;
+					tempMsg.type = 1;
+					inc tempMsg.d8[0];
+					await (jump)s;
+					stat=qPut(tempMsg);
 				end
 			with
-				await 10s;
+				await 20s;
 			end		
 		end
 	with
 		loop do
-			var usrMsg rMsg = await RECEIVE(1);
-			rMsg.source = nodeid;
+			var usrMsg rMsg = await RECEIVE(DATA_MSG);
 
-			loop i,10 do		
-				if childID[i] == rMsg.d16[1] then
-					if seq[i] < rMsg.d8[0]	then
-						seq[i] = rMsg.d8[0];
+			loop i,10 do
+				if childID[i] == rMsg.source then
+					if seq[i] < rMsg.d16[2]	then
+						seq[i] = rMsg.d16[2];
 						stat=qPut(rMsg);
 						break;
 					end
 				end
 				if childID[i] == 0 then
-					childID[i] = rMsg.d16[1];
-					seq[i] = rMsg.d8[0];
+					childID[i] = rMsg.source;
+					seq[i] = rMsg.d16[2];
 					stat=qPut(rMsg);
 					break;
 				end
