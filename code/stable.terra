@@ -72,7 +72,7 @@ loop do
 				var usrMsg rqMsg;
 				rqMsg.source = nodeid;
 				rqMsg.target = BROADCAST;
-				rqMsg.type = 3;
+				rqMsg.type = REQ_FATHER;
 				rqMsg.d16[0] = nodeid;
 				emit SEND(rqMsg);
 				await SEND_DONE(REQ_FATHER);
@@ -118,13 +118,14 @@ loop do
 				var usrMsg topoMsg;
 				topoMsg.source = nodeid;
 				topoMsg.target = BROADCAST;
-				topoMsg.type = 2;
+				topoMsg.type = TOPO_DESIGN;
 				topoMsg.d8[0] = 1; //Jump
 				emit SEND(topoMsg);
 				await SEND_DONE;
+				
 
 				emit LED2(TOGGLE);
-				await 5s; // Radio Silent
+				await 120s; // Radio Silent
 				emit LED2(TOGGLE);
 			end
 		end
@@ -146,7 +147,7 @@ loop do
 				await SEND_DONE(TOPO_DESIGN);
 	
 				emit LED2(TOGGLE);
-				await 5s;
+				await 120s;
 				emit LED2(TOGGLE);
 			end
 		end
@@ -190,13 +191,13 @@ loop do
 					tempMsg.d16[0] = temp;
 					tempMsg.source = nodeid;
 					tempMsg.d16[1] = nodeid;
-					tempMsg.type = 1;
+					tempMsg.type = DATA_MSG;
 					inc tempMsg.d8[0];
-					await (jump)s;
+					await (jump*10)s;
 					stat=qPut(tempMsg);
 				end
 			with
-				await 20s;
+				await 300s;
 			end		
 		end
 	with

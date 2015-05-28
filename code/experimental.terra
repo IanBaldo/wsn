@@ -41,6 +41,7 @@ var ubyte stat;
 var ushort father;
 var ubyte jump;
 var ushort send_seq = 0;
+var ushort period = 20;
 
 var ushort[10] childID;
 var ushort[10] seq;
@@ -72,7 +73,7 @@ loop do
 				var usrMsg rqMsg;
 				rqMsg.source = nodeid;
 				rqMsg.target = BROADCAST;
-				rqMsg.type = 3;
+				rqMsg.type = REQ_FATHER;
 				rqMsg.d16[0] = nodeid;
 				emit SEND(rqMsg);
 				await SEND_DONE(REQ_FATHER);
@@ -81,9 +82,9 @@ loop do
 
 				father = topMsg.source;
 				jump = topMsg.d8[0];
-				topMsg.source = nodeid;
-				topMsg.target = BROADCAST;	
-				topMsg.d8[0] = jump + 1;				
+				topMsg.source = nodeid;	
+				topMsg.d8[0] = jump + 1;
+				period = topMsg.d16[0];
 
 				emit SEND(topMsg);
 				await SEND_DONE(TOPO_DESIGN);
@@ -107,27 +108,29 @@ loop do
 	emit LED1(OFF);
 
 	par/or do	
-		par/or do
-			await CUSTOM_A;
-		with
-			var usrMsg reqMsg = await RECEIVE(REQ_FATHER);
-			if nodeid == 11 then
-				emit LED0(TOGGLE);
+		var usrMsg reqMsg = await RECEIVE(REQ_FATHER);
+		if nodeid == 11 then
+			emit LED0(TOGGLE);
+			period = reqMsg.d16[0];
 
-				// Start topology
-				var usrMsg topoMsg;
-				topoMsg.source = nodeid;
-				topoMsg.target = BROADCAST;
-				topoMsg.type = 2;
-				topoMsg.d8[0] = 1; //Jump
-				emit SEND(topoMsg);
-				await SEND_DONE;
+			// Start topology
+			var usrMsg topoMsg;
+			topoMsg.source = nodeid;
+			topoMsg.target = BROADCAST;
+			topoMsg.type = TOPO_DESIGN;
+			topoMsg.d8[0] = 1; //Jump
+			tempMsg.d8[0] = 1;			
+			topoMsg.d8[1] = tempMsg.d8[0];
+			topoMsg.d16[0] = period;
+			emit SEND(topoMsg);
+			await SEND_DONE;
+			
 
-				emit LED2(TOGGLE);
-				await 5s; // Radio Silent
-				emit LED2(TOGGLE);
-			end
+			emit LED2(TOGGLE);
+			await 10s; // Radio Silent
+			emit LED2(TOGGLE);
 		end
+	
 		emit LED0(OFF);
 		emit LED1(ON);
 	with
@@ -140,13 +143,15 @@ loop do
 
 				father = topMsg.source;
 				topMsg.source = nodeid;
-				topMsg.target = BROADCAST;
+				jump = topMsg.d8[0];
+				tempMsg.d8[0] = topMsg.d8[1];
+				period = topMsg.d16[0];
 
 				emit SEND(topMsg);
 				await SEND_DONE(TOPO_DESIGN);
 	
 				emit LED2(TOGGLE);
-				await 5s;
+				await 10s;
 				emit LED2(TOGGLE);
 			end
 		end
@@ -184,19 +189,15 @@ loop do
 			par/and do
 				emit REQ_TEMP();
 				var ushort temp = await TEMP;
-				if temp > 530 then					// REMOVE FOR FINAL VERSION
-					emit REQ_CUSTOM_A(DATA_MSG);
-				else
-					tempMsg.d16[0] = temp;
-					tempMsg.source = nodeid;
-					tempMsg.d16[1] = nodeid;
-					tempMsg.type = 1;
-					inc tempMsg.d8[0];
-					await (jump)s;
-					stat=qPut(tempMsg);
-				end
+				tempMsg.d16[0] = temp;
+				tempMsg.source = nodeid;
+				tempMsg.d16[1] = nodeid;
+				tempMsg.type = DATA_MSG;
+				inc tempMsg.d8[0];
+				await (jump)s;
+				stat=qPut(tempMsg);
 			with
-				await 20s;
+				await (period)s;
 			end		
 		end
 	with
