@@ -1,0 +1,16 @@
+#include "/home/terra/TerraNG/terra/TerraGrp.defs"
+
+
+pktype grMsg from msgGR_t with
+	var ubyte[4] d8;
+	var ushort[4] d16;
+end
+
+
+var group_t cMsg;
+groupInit(cMsg, 1, 1, 5, TRUE, eOFF, 0);
+
+loop do
+	var grMsg pMsg = await REC_GR(1);
+	emit LEDS(pMsg.d16[0]);
+end

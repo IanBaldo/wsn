@@ -1,13 +1,32 @@
 local tossam = require("tossam") 
 
+--[[
+	local conn = tossam.connect {
+	  protocol = "sf",
+	  host     = "localhost",
+	  port     = 9002,
+	  nodeid   = 0xFFFF
+	} ]]
+
+--[[
+	local conn = tossam.connect {
+	  protocol = "serial",
+	  port     = "/dev/ttyUSB1",
+	  baud     = "micaz",
+	  nodeid   = 0xFFFF
+	} ]]
+
+	local conn = tossam.connect {
+	  protocol = "network",
+	  host     = "localhost",
+	  port     = 9001,
+	  nodeid   = 1
+	}
+
+	if not(conn) then print("Connection error!"); return(1); end
 
 
-	local mote = tossam.connect("sf@localhost:9002",1)
---	local micaz = tossam.connect("serial@/dev/ttyUSB1:micaz",1)
-	if not(mote) then print("Connection error!"); return(1); end
-
-
-	mote:register [[ 
+	conn:register [[ 
 	  nx_struct msg_serial [140] { 
 		nx_uint16_t ReqMote;
 		nx_uint16_t ReqSeq;
@@ -44,10 +63,11 @@ msg_cp = {
 	d32 = {0,0}
 	}
 
-mote:send(msg_cp,140,1)
+local stat,err = conn:send(msg_cp,140)
+print("send:",stat,err)
 print("Message Sent! ; Period = " .. period .. (";  Seq = ") .. seq)
 
-	mote:unregister()
-	mote:close() 
+	conn:unregister()
+	conn:close() 
 
 

@@ -80,6 +80,7 @@ function geraArq()
 	end
 	file:write("\n=========================================================\n\n")
 	file:close()
+	os.execute("./transfer")
 end
 
 function checaPeriodo()
@@ -97,15 +98,20 @@ function handler()
 end
 
 while (1) do	
+	
+	local conn = tossam.connect {
+	  protocol = "sf",
+	  host     = "localhost",
+	  port     = 9002,
+	  nodeid   = 1
+	}
 
-	local mote = tossam.connect("sf@localhost:9002",1)
---	local micaz = tossam.connect("serial@/dev/ttyUSB1:micaz",1)
-	if not(mote) then 
+	if not(conn) then 
 		print("Connection error!") 
 	else
 
 	
-		mote:register [[ 
+		conn:register [[ 
 		  nx_struct msg_serial [150] { 
 			nx_uint16_t	nodeId;
 			nx_uint16_t seq_CTP;
@@ -119,11 +125,11 @@ while (1) do
 
 		print("msgID","nodeID","seq","temp","date")
 	--	file:write("nodeID\ttemp\t\tdate\n")
-		while (mote) do
+		while (conn) do
 			sig.signal(sig.SIGINT,handler)
 			sig.signal(sig.SIGTERM,handler)
 
-			local stat, msg, emsg = pcall(function() return mote:receive() end) 
+			local stat, msg, emsg = pcall(function() return conn:receive() end) 
 			if stat then
 				if msg then
 					checaPeriodo()
@@ -145,8 +151,8 @@ while (1) do
 			end
 		end
 		
-		mote:unregister()
-		mote:close()
+		conn:unregister()
+		conn:close()
 	end
 	
 	os.execute("sleep " .. 5)
