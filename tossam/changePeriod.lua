@@ -25,9 +25,9 @@ local tossam = require("tossam")
 	]]
 
 io.write("Digite o periodo(em segundos): ")
-local period = io.read()
+local period = tonumber(io.read())
 io.write("seq: ")
-local seq = io.read()
+local seq = tonumber(io.read())
 
 msg_cp = {
 	ReqMote = 1,
@@ -37,7 +37,7 @@ msg_cp = {
 
 	grId = 1,
 	grParam = 1,
-	TargetMote = 1,
+	TargetMote = 0xFFFF,
 	evtId = 2,
 	d8 ={0,0,0,0},
 	d16 ={period,0,0,0},
