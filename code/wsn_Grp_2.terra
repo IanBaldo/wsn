@@ -1,0 +1,52 @@
+#include "/home/terra/TerraNG/terra/TerraGrp.defs"
+
+pktype usrMsg from msgBS_t with
+	var ubyte[4] d8;
+	var ushort[4] d16;
+end
+
+pktype grMsg from msgGR_t with
+	var ubyte[4] d8;
+	var ushort[4] d16;
+end
+
+var ubyte debug = TRUE;
+var usrMsg uMsg;
+var ushort period = 10;
+
+uMsg.msgId = 1;
+uMsg.d16[1] = getNodeId();
+uMsg.d8[0] = 0;
+emit LED0(ON);
+
+var group_t cMsg;
+groupInit(cMsg, 1, 1, 5, TRUE, eOFF, 0);
+
+loop do
+	par/or do
+		loop do
+			par/and do
+				emit REQ_TEMP;
+				uMsg.d16[0] = await TEMP;	
+	
+			//	emit REQ_VOLTS;
+			//	uMsg.d16[1] = await VOLTS;
+			with
+				await (period)s;
+			end
+
+			if debug then
+				emit LED0(TOGGLE);
+			end
+
+			emit SEND_BS(uMsg);
+
+			inc uMsg.d8[0];
+		end
+	with
+		emit LED2(TOGGLE);
+		var grMsg pMsg = await REC_GR(1);
+		emit LED1(ON);		
+		period = pMsg.d16[0];
+	end
+end
