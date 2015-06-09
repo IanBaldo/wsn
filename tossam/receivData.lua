@@ -67,6 +67,7 @@ function fText(str,tam)
 	return string.sub(tmp,1,tam)
 end
 
+--[[
 function geraArq()
 	-- DATA FILE
 	file = io.open("data.txt","w+")
@@ -79,6 +80,22 @@ function geraArq()
 		end
 	end
 	file:write("\n=========================================================\n\n")
+	file:close()
+	os.execute("./transfer")
+end
+]]
+
+function geraArq()
+	-- DATA FILE
+	file = io.open("index.html","w+")
+	file:write("<html><head><meta charset='ISO-8859-1'><title> RSSF | PUC-Rio </title></head><body><h4>PUC-Rio -- Departamento de Informática   ".. os.date("%x %X") .."</h4><table border='1'>")
+	file:write("<tr><td>" .. fText("Local",25).."</td><td style='padding-left:10px'>"..fText("Temp(ºC)",15).."</td><td style='padding-left:10px'>"..fText(" Data/Hora",17).."</td></tr>")
+	for i=2,20 do
+		if data[i] then
+			file:write("<tr><td>" .. fText(Tsalas[data[i].nodeId],25).. "</td><td style='padding-left:35px'>" .. fText(data[i].TempC,15) .. "</td><td style='padding-left:10px'>" .. fText(data[i].date,17).."</td></tr>")
+		end
+	end
+	file:write("</table></body></html>")
 	file:close()
 	os.execute("./transfer")
 end
