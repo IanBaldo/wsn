@@ -18,16 +18,16 @@ Tadjust={
 }
 
 Tsalas = {
-[2]="Sala 502",
-[3]="Sala 503",
-[4]="Sala 504",
-[5]="Sala 505",
-[6]="Sala 506",
-[7]="Sala 507",
-[8]="Sala 508",
-[9]="Sala 509",
-[10]="Sala 510",
-[11]="Sala 511",
+[2]="Sala X02",
+[3]="Sala X03",
+[4]="Sala X04",
+[5]="Sala X05",
+[6]="Sala X06",
+[7]="Sala X07",
+[8]="Sala X08",
+[9]="Sala X09",
+[10]="Sala X10",
+[11]="Sala 504",
 }
 
 function convertDA(ADC,tipo,mote)
@@ -88,14 +88,14 @@ end
 function geraArq()
 	-- DATA FILE
 	file = io.open("index.html","w+")
-	file:write("<html><head><meta charset='ISO-8859-1'><title> RSSF | PUC-Rio </title></head><body><h4>PUC-Rio -- Departamento de Informática   ".. os.date("%x %X") .."</h4><table border='1'>")
-	file:write("<tr><td>" .. fText("Local",25).."</td><td style='padding-left:10px'>"..fText("Temp(ºC)",15).."</td><td style='padding-left:10px'>"..fText(" Data/Hora",17).."</td></tr>")
+	file:write("<html><head><meta http-equiv='refresh' content='10'><style>table, td, th {border:1px solid #98bf21;text-align: center;}table {width: 80%;max-width: 800px;}h4{text-align: center;}th{background-color: #A7C942;color: #ffffff;}</style><title> RSSF | PUC-Rio </title></head><body><h4>PUC-Rio -- Departamento de Informática  |  ".. os.date("%d/%m/%y %X") .."</h4><table align='center'>")
+	file:write("<tr><th>" .. fText("Local",25).."</th><th>"..fText("Temp(ºC)",15).."</th><th>"..fText(" Data/Hora",17).."</th></tr>")
 	for i=2,20 do
 		if data[i] then
-			file:write("<tr><td>" .. fText(Tsalas[data[i].nodeId],25).. "</td><td style='padding-left:35px'>" .. fText(data[i].TempC,15) .. "</td><td style='padding-left:10px'>" .. fText(data[i].date,17).."</td></tr>")
+			file:write("<tr><td>" .. fText(Tsalas[data[i].nodeId],25).. "</td><td>" .. fText(data[i].TempC,15) .. "</td><td>" .. fText(data[i].date,17).."</td></tr>")
 		end
 	end
-	file:write("</table></body></html>")
+	file:write("</table><br/><p alig='center'>Developed by: Ian Baldo</p></body></html>")
 	file:close()
 	os.execute("./transfer")
 end
@@ -150,7 +150,7 @@ while (1) do
 			if stat then
 				if msg then
 					checaPeriodo()
-					local date = os.date("%x %X")
+					local date = os.date("%d/%m/%y %X")
 					local TempC = convertDA(msg.temp,Tadjust[msg.nodeId].tp,msg.nodeId)
 					data[msg.nodeId] = {nodeId = msg.nodeId, seq=msg.seq, TempC=string.format("%.1f", round5(TempC)), date=date}
 					print(msg.id,msg.nodeId,msg.seq,string.format("%.1f", round5(TempC)),date)
