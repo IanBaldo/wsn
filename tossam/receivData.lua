@@ -88,14 +88,14 @@ end
 function geraArq()
 	-- DATA FILE
 	file = io.open("index.html","w+")
-	file:write("<html><head><meta http-equiv='refresh' content='10'><style>table, td, th {border:1px solid #98bf21;text-align: center;}table {width: 80%;max-width: 800px;}h4{text-align: center;}th{background-color: #A7C942;color: #ffffff;}</style><title> RSSF | PUC-Rio </title></head><body><h4>PUC-Rio -- Departamento de Informática  |  ".. os.date("%d/%m/%y %X") .."</h4><table align='center'>")
+	file:write("<html><head><meta http-equiv='refresh' content='180'><style>table, td, th {border:1px solid #98bf21;text-align: center;}table {width: 80%;max-width: 800px;}h4{text-align: center;}th{background-color: #A7C942;color: #ffffff;}</style><title> RSSF | PUC-Rio </title></head><body><h4>PUC-Rio -- Departamento de Informática  |  ".. os.date("%d/%m/%y %X") .."</h4><table align='center'>")
 	file:write("<tr><th>" .. fText("Local",25).."</th><th>"..fText("Temp(ºC)",15).."</th><th>"..fText(" Data/Hora",17).."</th></tr>")
 	for i=2,20 do
 		if data[i] then
 			file:write("<tr><td>" .. fText(Tsalas[data[i].nodeId],25).. "</td><td>" .. fText(data[i].TempC,15) .. "</td><td>" .. fText(data[i].date,17).."</td></tr>")
 		end
 	end
-	file:write("</table><br/><p alig='center'>Developed by: Ian Baldo</p></body></html>")
+	file:write("</table></body></html>")
 	file:close()
 	os.execute("./transfer")
 end
