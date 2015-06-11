@@ -4,7 +4,8 @@ local sig = require("posix.signal")
 -- Data Table
 data = {}
 
-period = 10
+period = 300 -- 300s = 5 minutos
+timeout = 20 -- em segundos
 currentPeriod = math.floor(os.time()/period)
 
 Tadjust={
@@ -109,10 +110,14 @@ function checaPeriodo()
 end
 
 function handler()
-	geraArq()
+	--geraArq()
 	print("\nbye bye\n")	
 	os.exit()
 end
+
+sig.signal(sig.SIGINT,handler)
+sig.signal(sig.SIGTERM,handler)
+
 
 while (1) do	
 	
@@ -127,7 +132,8 @@ while (1) do
 		print("Connection error!") 
 	else
 
-	
+		conn:settimeout(timeout)
+
 		conn:register [[ 
 		  nx_struct msg_serial [150] { 
 			nx_uint16_t	nodeId;
@@ -143,22 +149,23 @@ while (1) do
 		print("msgID","nodeID","seq","temp","date")
 	--	file:write("nodeID\ttemp\t\tdate\n")
 		while (conn) do
-			sig.signal(sig.SIGINT,handler)
-			sig.signal(sig.SIGTERM,handler)
 
 			local stat, msg, emsg = pcall(function() return conn:receive() end) 
 			if stat then
 				if msg then
-					checaPeriodo()
 					local date = os.date("%d/%m/%y %X")
 					local TempC = convertDA(msg.temp,Tadjust[msg.nodeId].tp,msg.nodeId)
 					data[msg.nodeId] = {nodeId = msg.nodeId, seq=msg.seq, TempC=string.format("%.1f", round5(TempC)), date=date}
+					checaPeriodo()
 					print(msg.id,msg.nodeId,msg.seq,string.format("%.1f", round5(TempC)),date)
 					--file:write(msg.nodeId,"\t\t" .. string.format("%.1f", round5(TempC)),"\t\t" .. date,"\n")
 				else
 					if emsg == "closed" then
 						print("\nConnection closed!")
 						break 
+					elseif emsg == "timeout" then
+						checaPeriodo()
+						--print(".") --print("timeout")			
 					end
 				end
 			else
