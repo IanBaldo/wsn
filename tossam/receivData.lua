@@ -8,6 +8,11 @@ period = 30 -- 300s = 5 minutos
 timeout = 20 -- em segundos
 currentPeriod = math.floor(os.time()/period)
 
+-- Log file
+logfile = io.open("log.txt","w")
+logfile:write("Data/Hora Log, nodeId, Salas, Sequencial, Temperatura, Data/Hora Medição\n")
+logfile:close()
+
 Tadjust={
 [2]={offset=2.59461, alpha=0.68592, tp='MTS300A'},
 [3]={offset=-1.34362, alpha=0.78082, tp='MTS300B'},
@@ -20,16 +25,16 @@ Tadjust={
 }
 
 Tsalas = {
-[2]="Sala X02",
-[3]="Sala X03",
-[4]="Sala X04",
-[5]="Sala X05",
-[6]="Sala X06",
-[7]="Sala X07",
-[8]="Sala X08",
-[9]="Sala X09",
-[10]="Sala X10",
-[11]="Sala 504",
+[2]="XXX 02",
+[3]="XXX 03",
+[4]="XXX 04",
+[5]="XXX 05",
+[6]="XXX 06",
+[7]="XXX 07",
+[8]="XXX 08",
+[9]="XXX 09",
+[10]="XXX 10",
+[11]="XXX 11",
 }
 
 function convertDA(ADC,tipo,mote)
@@ -71,23 +76,17 @@ function fText(str,tam)
 	return string.sub(tmp,1,tam)
 end
 
---[[
-function geraArq()
-	-- DATA FILE
-	file = io.open("data.txt","w+")
-	file:write("\nPUC-Rio -- Departamento de Informática \t" .. os.date("%x %X") .. "\n\n")
-	file:write("============  Monitoramento de temperatura  =============\n\n") 
-	file:write(fText("Local",25)..fText("Temp(ºC)",15)..fText(" Data/Hora",17).."\n")
+function geraLog()
+	logfile = io.open("log.txt","a")
+	local logDate = os.date("%d/%m/%y %X")
 	for i=2,20 do
 		if data[i] then
-			file:write(fText(Tsalas[data[i].nodeId],25) .. fText(data[i].TempC,15) .. fText(data[i].date,17).."\n")
+			logfile:write(logDate ..', '.. data[i].nodeId ..', '..  (Tsalas[data[i].nodeId] or "Não cadastrado") ..', '.. data[i].seq ..', '.. data[i].TempC ..', '.. data[i].date ..'\n')
 		end
 	end
-	file:write("\n=========================================================\n\n")
-	file:close()
-	os.execute("./transfer")
+	logfile:close()
 end
-]]
+
 
 function geraArq()
 	-- DATA FILE
@@ -108,12 +107,12 @@ function checaPeriodo()
 	testPeriod = math.floor(os.time()/period)
 	if testPeriod > currentPeriod then
 		geraArq()
+		geraLog()
 		currentPeriod = testPeriod
 	end
 end
 
 function handler()
-	--geraArq()
 	print("\nbye bye\n")	
 	os.exit()
 end
@@ -156,7 +155,7 @@ while (1) do
 			local stat, msg, emsg = pcall(function() return conn:receive() end) 
 			if stat then
 				if msg then
-					local date = os.date("%d/%m/%y  %X")
+					local date = os.date("%d/%m/%y %X")
 					local TempC
 					if Tadjust[msg.nodeId] then
 						TempC = convertDA(msg.temp,Tadjust[msg.nodeId].tp,msg.nodeId)
