@@ -4,7 +4,7 @@ local sig = require("posix.signal")
 -- Data Table
 data = {}
 
-period = 300 -- 300s = 5 minutos
+period = 30 -- 300s = 5 minutos
 timeout = 20 -- em segundos
 currentPeriod = math.floor(os.time()/period)
 
@@ -14,6 +14,7 @@ Tadjust={
 [4]={offset=4.61316, alpha=0.63973, tp='MTS300B'},
 [5]={offset=5.18457, alpha=0.60445, tp='MTS300B'},
 [6]={offset=1.82639, alpha=0.72983, tp='MTS300B'},
+[7]={offset=0, alpha=0, tp='MTS300B'},
 [8]={offset=4.46287, alpha=0.64626, tp='MTS300B'},
 [11]={offset=3.74651, alpha=0.65442, tp='MTS300B'},
 }
@@ -32,6 +33,7 @@ Tsalas = {
 }
 
 function convertDA(ADC,tipo,mote)
+	
 	local Temp = 0
 	if tipo == "MDA" then
 		a = 0.001010024
@@ -51,6 +53,7 @@ function convertDA(ADC,tipo,mote)
 		Temp = (1 / (a + (b * math.log(Rthr)) + (c * math.pow(math.log(Rthr),3.0)))) - 272.15
 	end	
 	return Tadjust[mote].offset + (Temp * Tadjust[mote].alpha)
+	
 end
 
 function round5(num)
@@ -93,12 +96,12 @@ function geraArq()
 	file:write("<tr><th>" .. fText("Local",25).."</th><th>"..fText("Temp(ºC)",15).."</th><th>"..fText(" Data/Hora",17).."</th></tr>")
 	for i=2,20 do
 		if data[i] then
-			file:write("<tr><td>" .. fText(Tsalas[data[i].nodeId],25).. "</td><td>" .. fText(data[i].TempC,15) .. "</td><td>" .. fText(data[i].date,17).."</td></tr>")
+			file:write("<tr><td>" .. fText(((data[i] and Tsalas[data[i].nodeId]) or 'Mote ' .. i .. ' não cadastrado'),25).. "</td><td>" .. fText(data[i].TempC,15) .. "</td><td>" .. fText(data[i].date,17).."</td></tr>")
 		end
 	end
 	file:write("</table></body></html>")
 	file:close()
-	os.execute("./transfer")
+--	os.execute("./transfer")
 end
 
 function checaPeriodo()
@@ -153,8 +156,13 @@ while (1) do
 			local stat, msg, emsg = pcall(function() return conn:receive() end) 
 			if stat then
 				if msg then
-					local date = os.date("%d/%m/%y %X")
-					local TempC = convertDA(msg.temp,Tadjust[msg.nodeId].tp,msg.nodeId)
+					local date = os.date("%d/%m/%y  %X")
+					local TempC
+					if Tadjust[msg.nodeId] then
+						TempC = convertDA(msg.temp,Tadjust[msg.nodeId].tp,msg.nodeId)
+					else
+						TempC = 500
+					end
 					data[msg.nodeId] = {nodeId = msg.nodeId, seq=msg.seq, TempC=string.format("%.1f", round5(TempC)), date=date}
 					checaPeriodo()
 					print(msg.id,msg.nodeId,msg.seq,string.format("%.1f", round5(TempC)),date)
