@@ -1,6 +1,10 @@
 local tossam = require("tossam")
 local sig = require("posix.signal")
-
+--[[
+	old green: #98bf21
+	new blue: #20A9EB
+	dark blue: #000033
+]]
 -- Data Table
 data = {}
 
@@ -91,8 +95,8 @@ end
 function geraArq()
 	-- DATA FILE
 	file = io.open("index.html","w+")
-	file:write("<html><head><meta http-equiv='refresh' content='120'><style>table, td, th {border:1px solid #98bf21;text-align: center;}table {width: 80%;max-width: 800px;}h4{text-align: center;}th{background-color: #A7C942;color: #ffffff;}</style><title> RSSF | PUC-Rio </title></head><body><h4>PUC-Rio -- Departamento de Informática  |  ".. os.date("%d/%m/%y %X") .."</h4><table align='center'>")
-	file:write("<tr><th>" .. fText("Local",25).."</th><th>"..fText("Temp(ºC)",15).."</th><th>"..fText(" Data/Hora",17).."</th></tr>")
+	file:write("<html><head><meta charset='UTF-8'><meta http-equiv='refresh' content='120'><style>body{font-family: Tahoma, Geneva, sans-serif;background-color: #000033;}table, td, th {text-align: center;}table {width: 80%;max-width: 800px;}h4{text-align:center;font-size:130%;}th{background-color: #20A9EB;color: #ffffff;}td{background-color: #bdbdbd;}#logopuc{float:left;}#logodi{float:right;}#header{margin-left: auto; margin-right: auto; text-align: center; max-width: 800px; width: 80%}#htd{background-color: #ffffff;}#all{margin-left: auto; margin-right: auto; background-color: #ffffff; height: 100%; width: 80%;max-width: 900px;}</style><title> RSSF | PUC-Rio </title></head><body><div id='all'><table id='header'><tr><td id='htd'>  <div id='logopuc'> <img src='http://www.puc-rio.br/imagens/brasao.jpg' alt='PUC-Rio'>  </div> </td><td id='htd'> <div id='mtext'> <h4>PUC-Rio -- Departamento de Informática </h4><h4>   16/06/15 18:56:03</h4>  </div> </td><td id='htd'> <div id='logodi'> <img src='http://www.inf.puc-rio.br/wp-content/themes/webdi2/imgs/logo_di1.png'> </div> </td></tr></table><br/><br/><br/><table align='center'>")
+	file:write("<tr><th>" .. fText("LOCAL",25).."</th><th>"..fText("TEMP(ºC)",15).."</th><th>"..fText(" DATA/HORA",17).."</th></tr>")
 	for i=2,20 do
 		if data[i] then
 			file:write("<tr><td>" .. fText(((data[i] and Tsalas[data[i].nodeId]) or 'Mote ' .. i .. ' não cadastrado'),25).. "</td><td>" .. fText(data[i].TempC,15) .. "</td><td>" .. fText(data[i].date,17).."</td></tr>")
