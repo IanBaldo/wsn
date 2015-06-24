@@ -2,8 +2,9 @@ local tossam = require("tossam")
 local sig = require("posix.signal")
 --[[
 	old green: #98bf21
-	new blue: #20A9EB
-	dark blue: #000033
+	new blue: #4462ee or #2044FD
+	dark blue: #000022
+	table grey: #E3E3E3
 ]]
 -- Data Table
 data = {}
@@ -95,14 +96,14 @@ end
 function geraArq()
 	-- DATA FILE
 	file = io.open("index.html","w+")
-	file:write("<html>\n\n<head>\n<meta charset='UTF-8'>\n<meta http-equiv='refresh' content='120'>\n<style>body{font-family: Tahoma, Geneva, sans-serif;background-color: #000033;}\ntable, td, th {text-align: center;}table {width: 80%;max-width: 800px;}\nh4{text-align:center;font-size:130%;}\nth{background-color: #20A9EB;color: #ffffff;}\ntd{background-color: #bdbdbd;}\n#logopuc{float:left;}\n#logodi{float:right;}\n#header{margin-left: auto; margin-right: auto; text-align: center; max-width: 800px; width: 80%}\n#htd{background-color: #ffffff;}\n#all{margin-left: auto; margin-right: auto; background-color: #ffffff; height: 100%; width: 80%;max-width: 900px;}\n</style>\n<title> RSSF | PUC-Rio </title>\n</head>\n\n<body>\n<div id='all'>\n<table id='header'>\n<tr>\n<td id='htd'>  <div id='logopuc'> <img src='http://www.puc-rio.br/imagens/brasao.jpg' alt='PUC-Rio'>  </div> </td>\n<td id='htd'> <div id='mtext'> <h4>PUC-Rio -- Departamento de Informática </h4><h4>   16/06/15 18:56:03</h4>  </div> </td>\n<td id='htd'> <div id='logodi'> <img src='http://www.inf.puc-rio.br/wp-content/themes/webdi2/imgs/logo_di1.png'> </div> </td>\n</tr>\n</table>\n<br/><br/><br/>\n<table align='center'>")
+	file:write("<html>\n\n<head>\n<meta charset='UTF-8'>\n<meta http-equiv='refresh' content='120'>\n<style>body{font-family: Helvetica Neue,Helvetica,Arial,sans-serif;background-color: #000022;}\ntable, td, th {text-align: center;}table {width: 80%;max-width: 800px;}\nh4{text-align:center;font-size:115%;}\nth{background-color: #4462ee;color: #ffffff;height: 25px;}\ntd{background-color: #E3E3E3;}\n#logopuc{float:left;}\n#logodi{float:right;}\n#header{margin-left: auto; margin-right: auto; text-align: center; max-width: 800px; width: 80%}\n#htd{background-color: #ffffff;}\n#all{margin-left: auto; margin-right: auto; background-color: #ffffff; height: 100%; width: 80%;max-width: 900px;}\n</style>\n<title> RSSF | PUC-Rio </title>\n</head>\n\n<body>\n<div id='all'>\n<table id='header'>\n<tr>\n<td id='htd'>  <div id='logopuc'> <img src='http://www.puc-rio.br/imagens/brasao.jpg' alt='PUC-Rio'>  </div> </td>\n<td id='htd'> <div id='mtext'> <h4>PUC-Rio -- Departamento de Informática </h4><h4>   16/06/15 18:56:03</h4>  </div> </td>\n<td id='htd'> <div id='logodi'> <img src='http://www.inf.puc-rio.br/wp-content/themes/webdi2/imgs/logo_di1.png'> </div> </td>\n</tr>\n</table>\n<br/><br/><br/>\n<table align='center'>")
 	file:write("<tr><th>" .. fText("LOCAL",25).."</th><th>"..fText("TEMP(ºC)",15).."</th><th>"..fText(" DATA/HORA",17).."</th></tr>")
 	for i=2,20 do
 		if data[i] then
 			file:write("<tr><td>" .. fText(((data[i] and Tsalas[data[i].nodeId]) or 'Mote ' .. i .. ' não cadastrado'),25).. "</td><td>" .. fText(data[i].TempC,15) .. "</td><td>" .. fText(data[i].date,17).."</td></tr>")
 		end
 	end
-	file:write("</table></body></html>")
+	file:write("</table></div></body></html>")
 	file:close()
 	os.execute("./transfer")
 end
