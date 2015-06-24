@@ -95,7 +95,7 @@ end
 function geraArq()
 	-- DATA FILE
 	file = io.open("index.html","w+")
-	file:write("<html><head><meta charset='UTF-8'><meta http-equiv='refresh' content='120'><style>body{font-family: Tahoma, Geneva, sans-serif;background-color: #000033;}table, td, th {text-align: center;}table {width: 80%;max-width: 800px;}h4{text-align:center;font-size:130%;}th{background-color: #20A9EB;color: #ffffff;}td{background-color: #bdbdbd;}#logopuc{float:left;}#logodi{float:right;}#header{margin-left: auto; margin-right: auto; text-align: center; max-width: 800px; width: 80%}#htd{background-color: #ffffff;}#all{margin-left: auto; margin-right: auto; background-color: #ffffff; height: 100%; width: 80%;max-width: 900px;}</style><title> RSSF | PUC-Rio </title></head><body><div id='all'><table id='header'><tr><td id='htd'>  <div id='logopuc'> <img src='http://www.puc-rio.br/imagens/brasao.jpg' alt='PUC-Rio'>  </div> </td><td id='htd'> <div id='mtext'> <h4>PUC-Rio -- Departamento de Informática </h4><h4>   16/06/15 18:56:03</h4>  </div> </td><td id='htd'> <div id='logodi'> <img src='http://www.inf.puc-rio.br/wp-content/themes/webdi2/imgs/logo_di1.png'> </div> </td></tr></table><br/><br/><br/><table align='center'>")
+	file:write("<html>\n\n<head>\n<meta charset='UTF-8'>\n<meta http-equiv='refresh' content='120'>\n<style>body{font-family: Tahoma, Geneva, sans-serif;background-color: #000033;}\ntable, td, th {text-align: center;}table {width: 80%;max-width: 800px;}\nh4{text-align:center;font-size:130%;}\nth{background-color: #20A9EB;color: #ffffff;}\ntd{background-color: #bdbdbd;}\n#logopuc{float:left;}\n#logodi{float:right;}\n#header{margin-left: auto; margin-right: auto; text-align: center; max-width: 800px; width: 80%}\n#htd{background-color: #ffffff;}\n#all{margin-left: auto; margin-right: auto; background-color: #ffffff; height: 100%; width: 80%;max-width: 900px;}\n</style>\n<title> RSSF | PUC-Rio </title>\n</head>\n\n<body>\n<div id='all'>\n<table id='header'>\n<tr>\n<td id='htd'>  <div id='logopuc'> <img src='http://www.puc-rio.br/imagens/brasao.jpg' alt='PUC-Rio'>  </div> </td>\n<td id='htd'> <div id='mtext'> <h4>PUC-Rio -- Departamento de Informática </h4><h4>   16/06/15 18:56:03</h4>  </div> </td>\n<td id='htd'> <div id='logodi'> <img src='http://www.inf.puc-rio.br/wp-content/themes/webdi2/imgs/logo_di1.png'> </div> </td>\n</tr>\n</table>\n<br/><br/><br/>\n<table align='center'>")
 	file:write("<tr><th>" .. fText("LOCAL",25).."</th><th>"..fText("TEMP(ºC)",15).."</th><th>"..fText(" DATA/HORA",17).."</th></tr>")
 	for i=2,20 do
 		if data[i] then
@@ -104,7 +104,7 @@ function geraArq()
 	end
 	file:write("</table></body></html>")
 	file:close()
---	os.execute("./transfer")
+	os.execute("./transfer")
 end
 
 function checaPeriodo()
@@ -164,7 +164,7 @@ while (1) do
 					if Tadjust[msg.nodeId] then
 						TempC = convertDA(msg.temp,Tadjust[msg.nodeId].tp,msg.nodeId)
 					else
-						TempC = 500
+						TempC = "---"
 					end
 					data[msg.nodeId] = {nodeId = msg.nodeId, seq=msg.seq, TempC=string.format("%.1f", round5(TempC)), date=date}
 					checaPeriodo()
